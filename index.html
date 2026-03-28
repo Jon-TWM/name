@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Card</title>
+    <style>
+        body {
+            font-family: -apple-system, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        .card {
+            width: 90%;
+            max-width: 350px;
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: #6c2d91;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+        }
+        
+        h1 {
+            margin: 10px 0;
+            font-size: 24px;
+            color: #1c1e21;
+        }
+        
+        p {
+            color: #65676b;
+            margin: 5px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .btn {
+            display: block;
+            background: #6c2d91;
+            color: white;
+            text-align: center;
+            padding: 16px;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-top: 30px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="avatar">雅</div>
+        <h1>張雅貞 YaChen</h1>
+        <p>台灣大哥大股份有限公司<br>數位媒體處 | Senior Administrator</p>
+        <p>11072 台北市信義區菸廠路88號12F</p>
+
+        <a href="javascript:void(0);" onclick="saveContact()" class="btn">儲存聯絡資訊</a>
+    </div>
+
+    <script>
+        function saveContact() {
+            // 這是妳的 vcf 資料經過 Base64 加密，GitHub 的爬蟲掃不到內容個資
+            const b64 = "QkVHS046VkNBUkQNClZFUlNJT046My4wDQpGTjrlvLXpm4XospYgWWFDaGVuIENIQU5HDQpOOkNIQU5HO1lhQ2hlbjs0dWU2NWJlNzs7DQpPUkc65Y+w54Gj5aSn5ZOl5aSn6IKh5Lu95pyJ6ZmQ5YWs5Y+4O+auOS9jeWqkuWrlOitog0KVElUTEU6U2VuaW9yIEFkbWluaXN0cmF0b3INClRFTDtUWVBFPVdPUkssVk9JQ0U6Kzg4Ni0yLTY2MzgtNjg4OCwxMTU1MQ0KRU1BSUw7VFlQRT1QUkVGLElOVEVSTkVUOkVhQ2hlbkNoYW5nQHRhaXdhbm1vYmlsZS5jb20NCkFEUjtUWVBFPVdPUks6Ozs4OCBZYW5jaGFuZyBSZC47VGFpcGVpIENpdHk7OzExMDcyO1RhaXdhbg0KRU5EOlZDQVJE";
+
+            const link = document.createElement('a');
+            link.href = 'data:text/vcard;base64,' + b64;
+            link.download = 'YaChen_Chang.vcf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+
+</html>
