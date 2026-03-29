@@ -100,33 +100,46 @@
 
     <script>
         /**
-         * 1. 安全解碼函數
-         * 處理 Base64 並支援 UTF-8 中文，同時濾掉可能導致 atob 崩潰的換行與空格
+         * 1. 穩健的 UTF-8 Base64 解碼器
+         * 解決手機版 Chrome/Line 對於中文 Base64 解碼報錯的問題
          */
         function getDecodedData() {
             try {
                 const raw = document.getElementById('js-encoded-data').textContent;
-                // 重要：濾掉所有空白字元與換行，防止 atob 報錯
-                const encoded = raw.replace(/\s/g, '');
+                // 濾掉所有換行與空白
+                const b64 = raw.replace(/\s/g, '');
 
-                // 執行解碼並轉換為 UTF-8 字串
-                return decodeURIComponent(atob(encoded).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
+                // 使用 Uint8Array 處理位元組，這是目前最穩、不會讓中文報錯的做法
+                const binString = atob(b64);
+                const bytes = new Uint8Array(binString.length);
+                for (let i = 0; i < binString.length; i++) {
+                    bytes[i] = binString.charCodeAt(i);
+                }
+                // 使用 TextDecoder 強制以 UTF-8 解析
+                return new TextDecoder().decode(bytes);
             } catch (e) {
-                console.error("Base64 解碼失敗:", e);
-                return "資料解析錯誤，請聯繫管理員。";
+                console.error("解碼失敗詳情:", e);
+                // 萬一 TextDecoder 不支援，使用舊版相容做法
+                try {
+                    return decodeURIComponent(escape(atob(document.getElementById('js-encoded-data').textContent.replace(/\s/g, ''))));
+                } catch (e2) {
+                    return "解析失敗，請長按圖片資訊手動輸入";
+                }
             }
         }
 
         /**
-         * 2. 複製功能主程式
-         * 包含現代 API 與針對手機瀏覽器 (Line/Chrome) 的相容性覆蓋
+         * 2. 複製功能
          */
         function copyContactText() {
             const text = getDecodedData();
 
-            // 優先嘗試現代 Clipboard API
+            // 如果解碼出來是錯誤訊息，就不要讓使用者複製
+            if (text.includes("解析失敗")) {
+                alert(text);
+                return;
+            }
+
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text)
                     .then(() => {
@@ -141,27 +154,24 @@
         }
 
         /**
-         * 3. 備用複製方案 (Fallback)
-         * 解決手機瀏覽器權限被擋，或「畫面只有圖片無法選取」的痛點
+         * 3. 備用複製方案 (Overlay 模式)
          */
         function fallbackCopy(text) {
-            // 建立一個全螢幕遮罩層
             const overlay = document.createElement("div");
-            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; box-sizing:border-box; font-family:sans-serif;";
+            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; box-sizing:border-box;";
 
             const info = document.createElement("p");
             info.textContent = "請長按下方框內文字全選並複製：";
-            info.style = "margin-bottom:15px; font-size:16px; font-weight:bold;";
+            info.style = "margin-bottom:15px; font-weight:bold;";
 
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            // 設定選取區域樣式，確保在手機上好操作
-            textArea.style = "width:100%; height:180px; padding:15px; border-radius:12px; font-size:16px; border:none; color:#333; background:#fff; line-height:1.5;";
+            textArea.style = "width:100%; height:180px; padding:15px; border-radius:12px; font-size:16px; border:none; background:#fff; color:#333;";
             textArea.readOnly = true;
 
             const closeBtn = document.createElement("button");
             closeBtn.textContent = "關閉視窗";
-            closeBtn.style = "margin-top:25px; padding:12px 40px; border-radius:30px; border:none; background:#6c2d91; color:white; font-size:16px; font-weight:bold; cursor:pointer;";
+            closeBtn.style = "margin-top:25px; padding:12px 40px; border-radius:30px; border:none; background:#6c2d91; color:white; font-size:16px; font-weight:bold;";
             closeBtn.onclick = function() {
                 document.body.removeChild(overlay);
             };
@@ -171,21 +181,16 @@
             overlay.appendChild(closeBtn);
             document.body.appendChild(overlay);
 
-            // 自動聚焦並選取
             textArea.focus();
             textArea.select();
-            textArea.setSelectionRange(0, 9999); // 針對 iOS 的相容性
+            textArea.setSelectionRange(0, 9999);
 
-            // 最後嘗試一次指令複製
             try {
                 document.execCommand('copy');
-                alert("✅ 已自動選取文字，請點擊「複製」或手動拷貝。");
-            } catch (err) {
-                // 即使自動複製失敗，現在對方也看得到文字框可以手動選取了
-            }
+                alert("✅ 已自動選取文字，請點擊「複製」。");
+            } catch (err) {}
         }
 
-        // 針對 Google Drive 下載的導向 (保持原本邏輯)
         function handleSave() {
             window.location.href = "https://drive.google.com/uc?export=download&id=1UYH1B2v1RZLsnULqS4G3pAL8idYtSelc";
         }
