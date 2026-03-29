@@ -88,7 +88,7 @@
         <img src="BusinessCard.png" alt="Business Card" class="card-image">
 
         <div class="action-area">
-            <a href="https://drive.google.com/uc?export=download&id=1UYH1B2v1RZLsnULqS4G3pAL8idYtSelc" class="btn btn-main">📥 儲存聯絡資訊</a>
+            <a href="https://drive.google.com/uc?export=download&id=1UYH1B2v1RZLsnULqS4G3pAL8idYtSelc" onclick="return handleSaveClick(event)" class="btn btn-main">📥 儲存聯絡資訊</a>
 
             <button onclick="copyContactText()" class="btn btn-secondary">📋 複製文字資訊</button>
         </div>
@@ -96,7 +96,7 @@
 
     <div class="footer-text">TAIWAN MOBILE | UED</div>
 
-    <script id="js-encoded-data" type="text/plain">5by16ZuF6LKXIFlhQ2hlbiBDSEFORwrlj7DngaPlpKflm6TlpKfogqHku73pyInpmZDlhazlj7QgLyDmlb44L2N5aqS6auU6itpIHwgU2VuaW9yIEFkbWluaXN0cmF0b3IK6Zu76Kmx77yaKDAyKTY2MzgtNjg4OCAjMTE1NTEKRW1haWzvvJpZYUNoZW5DaGFuZ0B0YWl3YW5tb2JpbGUuY29tCuWcsOWdgO+8mjExMDcy5Y+w5YyX5biC5L+h576p5Y2A54it5bug6LevODjomZ8xMkY=</script>
+    <script id="js-encoded-data" type="text/plain">5by16ZuF6LKeIFlhQ2hlbiBDSEFORwrlj7DngaPlpKflk6XlpKfogqHku73mnInpmZDlhazlj7ggLyDmlbjkvY3lqpLpq5TomZUKKDAyKTY2MzgtNjg4OCAjMTE1NTEKWWFDaGVuQ2hhbmdAdGFpd2FubW9iaWxlLmNvbQoxMTA3MuWPsOWMl+W4guS/oee+qeWNgOiPuOW7oOi3rzg46JmfMTJGCjEyRiwgTm8uODgsIFlhbkNoYW5nIFJkLiwgWGluWWkgRGlzdC4sIFRhaXBlaSBDaXR5LCBUYWl3YW4oUi5PLkMuKQ==</script>
 
     <script>
         /**
@@ -130,16 +130,38 @@
 
         /**
          * 2. 複製功能
+         * 策略：先嘗試同步 execCommand（在使用者手勢 context 內最可靠），
+         *       失敗則改用 async Clipboard API，兩者都失敗才顯示 Overlay 讓使用者手動複製。
          */
         function copyContactText() {
             const text = getDecodedData();
 
-            // 如果解碼出來是錯誤訊息，就不要讓使用者複製
             if (text.includes("解析失敗")) {
                 alert(text);
                 return;
             }
 
+            // 方法一：建立隱藏 textarea，在同步手勢 context 內用 execCommand 複製
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.cssText = "position:fixed; top:-9999px; left:-9999px; opacity:0;";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            ta.setSelectionRange(0, 9999);
+
+            let syncSuccess = false;
+            try {
+                syncSuccess = document.execCommand('copy');
+            } catch (e) {}
+            document.body.removeChild(ta);
+
+            if (syncSuccess) {
+                alert("✅ 聯絡資訊已複製！");
+                return;
+            }
+
+            // 方法二：async Clipboard API（HTTPS + 非 LINE 內建瀏覽器時可用）
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text)
                     .then(() => {
@@ -155,23 +177,25 @@
 
         /**
          * 3. 備用複製方案 (Overlay 模式)
+         * 顯示可選取的文字框，讓使用者長按手動複製。
+         * 不再偽裝自動複製成功，避免誤導。
          */
         function fallbackCopy(text) {
             const overlay = document.createElement("div");
-            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; box-sizing:border-box;";
+            overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; box-sizing:border-box;";
 
             const info = document.createElement("p");
-            info.textContent = "請長按下方框內文字全選並複製：";
-            info.style = "margin-bottom:15px; font-weight:bold;";
+            info.textContent = "請長按下方框內文字，全選後複製：";
+            info.style.cssText = "margin-bottom:15px; font-weight:bold; text-align:center;";
 
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style = "width:100%; height:180px; padding:15px; border-radius:12px; font-size:16px; border:none; background:#fff; color:#333;";
-            textArea.readOnly = true;
+            // 不設 readOnly，讓手機瀏覽器可以觸發選取選單
+            textArea.style.cssText = "width:100%; height:180px; padding:15px; border-radius:12px; font-size:16px; border:none; background:#fff; color:#333;";
 
             const closeBtn = document.createElement("button");
             closeBtn.textContent = "關閉視窗";
-            closeBtn.style = "margin-top:25px; padding:12px 40px; border-radius:30px; border:none; background:#6c2d91; color:white; font-size:16px; font-weight:bold;";
+            closeBtn.style.cssText = "margin-top:25px; padding:12px 40px; border-radius:30px; border:none; background:#6c2d91; color:white; font-size:16px; font-weight:bold;";
             closeBtn.onclick = function() {
                 document.body.removeChild(overlay);
             };
@@ -181,18 +205,35 @@
             overlay.appendChild(closeBtn);
             document.body.appendChild(overlay);
 
+            // 自動全選，讓使用者看到文字已被選取
             textArea.focus();
             textArea.select();
             textArea.setSelectionRange(0, 9999);
-
-            try {
-                document.execCommand('copy');
-                alert("✅ 已自動選取文字，請點擊「複製」。");
-            } catch (err) {}
         }
 
-        function handleSave() {
-            window.location.href = "https://drive.google.com/uc?export=download&id=1UYH1B2v1RZLsnULqS4G3pAL8idYtSelc";
+        function isLINEBrowser() {
+            return /\bLine\b/i.test(navigator.userAgent);
+        }
+
+        function handleSaveClick(event) {
+            if (isLINEBrowser()) {
+                event.preventDefault();
+                const overlay = document.createElement("div");
+                overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:28px; box-sizing:border-box; text-align:center;";
+
+                overlay.innerHTML = `
+                    <p style="font-size:18px; font-weight:bold; margin-bottom:12px;">請用外部瀏覽器開啟</p>
+                    <p style="font-size:14px; line-height:1.7; margin-bottom:24px; color:#ddd;">
+                        LINE 內建瀏覽器無法下載檔案。<br>
+                        請點右上角 <strong>「⋯」→「在瀏覽器中開啟」</strong>，<br>再點「儲存聯絡資訊」即可下載。
+                    </p>
+                    <button style="padding:12px 40px; border-radius:30px; border:none; background:#6c2d91; color:white; font-size:16px; font-weight:bold;">了解</button>
+                `;
+                overlay.querySelector("button").onclick = () => document.body.removeChild(overlay);
+                document.body.appendChild(overlay);
+                return false;
+            }
+            return true;
         }
     </script>
 </body>
