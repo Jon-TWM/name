@@ -4,94 +4,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Card</title>
+    <title>Digital Business Card</title>
     <style>
         body {
-            font-family: -apple-system, sans-serif;
-            background: #f0f2f5;
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #fafafa;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            justify-content: center;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
         
         .card {
-            width: 90%;
+            width: 100%;
             max-width: 350px;
             background: white;
             border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            line-height: 0;
         }
         
-        .avatar {
-            width: 100px;
-            height: 100px;
-            background: #6c2d91;
-            border-radius: 50%;
-            margin: 0 auto 20px;
+        .card-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .action-area {
+            padding: 25px;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 40px;
-        }
-        
-        h1 {
-            margin: 10px 0;
-            font-size: 24px;
-            color: #1c1e21;
-        }
-        
-        p {
-            color: #65676b;
-            margin: 5px 0;
-            font-size: 14px;
-            line-height: 1.5;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            box-sizing: border-box;
+            background: white;
         }
         
         .btn {
             display: block;
-            background: #6c2d91;
-            color: white;
             text-align: center;
             padding: 16px;
             text-decoration: none;
-            border-radius: 12px;
-            margin-top: 30px;
+            border-radius: 14px;
             font-weight: 600;
-            transition: transform 0.2s;
+            font-size: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .btn:active {
-            transform: scale(0.98);
+        .btn-main {
+            background: #6c2d91;
+            color: white;
+            box-shadow: 0 5px 15px rgba(108, 45, 145, 0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #6c2d91;
+            border: 2px solid #6c2d91;
+        }
+        
+        .footer-text {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #bbb;
+            text-align: center;
+            letter-spacing: 1px;
         }
     </style>
 </head>
 
 <body>
-    <div class="card">
-        <div class="avatar">雅</div>
-        <h1>張雅貞 YaChen</h1>
-        <p>台灣大哥大股份有限公司<br>數位媒體處 | Senior Administrator</p>
-        <p>11072 台北市信義區菸廠路88號12F</p>
 
-        <a href="javascript:void(0);" onclick="saveContact()" class="btn">儲存聯絡資訊</a>
+    <div class="card">
+        <img src="BusinessCard.png" alt="Business Card" class="card-image">
+
+        <div class="action-area">
+            <a href="https://drive.google.com/uc?export=download&id=1UYH1B2v1RZLsnULqS4G3pAL8idYtSelc" class="btn btn-main">📥 儲存聯絡資訊</a>
+
+            <button onclick="copyContactText()" class="btn btn-secondary">📋 複製文字資訊</button>
+        </div>
     </div>
 
-    <script>
-        function saveContact() {
-            // 這是妳的 vcf 資料經過 Base64 加密，GitHub 的爬蟲掃不到內容個資
-            const b64 = "QkVHS046VkNBUkQNClZFUlNJT046My4wDQpOOuadsjt6X6RrX2p1bjs7Ow0KRk465b116Z6F6LKWCk9SRzrlj7DngaPlpKflm6TlpKfogqHku73pyInpmZDlhazlj7Q75pW45L2N5aqS6auU6itpClRJVExFOlNlbmlvciBBZG1pbmlzdHJhdG9yClRFTDtXVE9SSyxWT0lDRTo4ODYtMi02NjM4LTY4ODgjMTE1NTEKRU1BSUw7V09SSzpZYUNoZW5DaGFuZ0B0YWl3YW5tb2JpbGUuY29tCkFEUjtXT1JLOzs4OCBZYW5jaGFuZyBSZC4sIFhpbnlpIERpc3QuO1RhaXpeiBDaXR5OzsxMTA3MjtUYWl3YW4KRU5EOlZDQVJE";
+    <div class="footer-text">TAIWAN MOBILE | UED</div>
 
-            const link = document.createElement('a');
-            link.href = 'data:text/vcard;base64,' + b64;
-            link.download = 'YaChen_Chang.vcf';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    <script id="js-encoded-data" type="text/plain">
+        5by16ZuF6LKXIFlhQ2hlbiBDSEFORwrlj7DngaPlpKflm6TlpKfogqHku73pyInpmZDlhazlj7QgLyDmlb44L2N5aqS6auU6itpIHwgU2VuaW9yIEFkbWluaXN0cmF0b3IK6Zu76Kmx77yaKDAyKTY2MzgtNjg4OCAjMTE1NTEKRW1haWzvvJpZYUNoZW5DaGFuZ0B0YWl3YW5tb2JpbGUuY29tCuWcsOWdgO+8mjExMDcy5Y+w5YyX5biC5L+h576p5Y2A54it5bug6LevODjomZ8xMkY=
+    </script>
+
+    <script>
+        function copyContactText() {
+            const encoded = document.getElementById('js-encoded-data').textContent.trim();
+            // 處理中文 Base64 解碼
+            const text = decodeURIComponent(atob(encoded).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => alert("✅ 聯絡資訊已複製！"));
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert("✅ 聯絡資訊已複製！");
+                } catch (err) {
+                    alert("複製失敗，請手動選取");
+                }
+                document.body.removeChild(textArea);
+            }
         }
     </script>
 </body>
