@@ -96,19 +96,37 @@
 
     <div class="footer-text">TAIWAN MOBILE | UED</div>
 
-    <script id="js-encoded-data" type="text/plain">
-        5by16ZuF6LKXIFlhQ2hlbiBDSEFORwrlj7DngaPlpKflm6TlpKfogqHku73pyInpmZDlhazlj7QgLyDmlb44L2N5aqS6auU6itpIHwgU2VuaW9yIEFkbWluaXN0cmF0b3IK6Zu76Kmx77yaKDAyKTY2MzgtNjg4OCAjMTE1NTEKRW1haWzvvJpZYUNoZW5DaGFuZ0B0YWl3YW5tb2JpbGUuY29tCuWcsOWdgO+8mjExMDcy5Y+w5YyX5biC5L+h576p5Y2A54it5bug6LevODjomZ8xMkY=
-    </script>
+    <script id="js-encoded-data" type="text/plain">5by16ZuF6LKXIFlhQ2hlbiBDSEFORwrlj7DngaPlpKflm6TlpKfogqHku73pyInpmZDlhazlj7QgLyDmlb44L2N5aqS6auU6itpIHwgU2VuaW9yIEFkbWluaXN0cmF0b3IK6Zu76Kmx77yaKDAyKTY2MzgtNjg4OCAjMTE1NTEKRW1haWzvvJpZYUNoZW5DaGFuZ0B0YWl3YW5tb2JpbGUuY29tCuWcsOWdgO+8mjExMDcy5Y+w5YyX5biC5L+h576p5Y2A54it5bug6LevODjomZ8xMkY=</script>
 
     <script>
-        function copyContactText() {
-            // 1. 取得 Base64 解碼後的文字
-            const encoded = document.getElementById('js-encoded-data').textContent.trim();
-            const text = decodeURIComponent(atob(encoded).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+        /**
+         * 1. 安全解碼函數
+         * 處理 Base64 並支援 UTF-8 中文，同時濾掉可能導致 atob 崩潰的換行與空格
+         */
+        function getDecodedData() {
+            try {
+                const raw = document.getElementById('js-encoded-data').textContent;
+                // 重要：濾掉所有空白字元與換行，防止 atob 報錯
+                const encoded = raw.replace(/\s/g, '');
 
-            // 2. 嘗試使用現代 Clipboard API
+                // 執行解碼並轉換為 UTF-8 字串
+                return decodeURIComponent(atob(encoded).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+            } catch (e) {
+                console.error("Base64 解碼失敗:", e);
+                return "資料解析錯誤，請聯繫管理員。";
+            }
+        }
+
+        /**
+         * 2. 複製功能主程式
+         * 包含現代 API 與針對手機瀏覽器 (Line/Chrome) 的相容性覆蓋
+         */
+        function copyContactText() {
+            const text = getDecodedData();
+
+            // 優先嘗試現代 Clipboard API
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text)
                     .then(() => {
@@ -116,29 +134,34 @@
                     })
                     .catch(() => {
                         fallbackCopy(text);
-                    }); // 失敗則進入備用方案
+                    });
             } else {
                 fallbackCopy(text);
             }
         }
 
+        /**
+         * 3. 備用複製方案 (Fallback)
+         * 解決手機瀏覽器權限被擋，或「畫面只有圖片無法選取」的痛點
+         */
         function fallbackCopy(text) {
-            // 解決妳說的「畫面上只有圖片無法選取」的問題
-            // 我們動態建立一個漂亮的滿版 overlay，把文字噴出來讓對方選
+            // 建立一個全螢幕遮罩層
             const overlay = document.createElement("div");
-            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; box-sizing:border-box;";
+            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; box-sizing:border-box; font-family:sans-serif;";
 
             const info = document.createElement("p");
-            info.textContent = "請長按下方文字框全選並複製：";
-            info.style = "margin-bottom:15px; font-size:16px;";
+            info.textContent = "請長按下方框內文字全選並複製：";
+            info.style = "margin-bottom:15px; font-size:16px; font-weight:bold;";
 
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            textArea.style = "width:100%; height:200px; padding:15px; border-radius:10px; font-size:16px; border:none;";
+            // 設定選取區域樣式，確保在手機上好操作
+            textArea.style = "width:100%; height:180px; padding:15px; border-radius:12px; font-size:16px; border:none; color:#333; background:#fff; line-height:1.5;";
+            textArea.readOnly = true;
 
             const closeBtn = document.createElement("button");
             closeBtn.textContent = "關閉視窗";
-            closeBtn.style = "margin-top:20px; padding:10px 30px; border-radius:20px; border:none; background:#6c2d91; color:white; font-size:16px;";
+            closeBtn.style = "margin-top:25px; padding:12px 40px; border-radius:30px; border:none; background:#6c2d91; color:white; font-size:16px; font-weight:bold; cursor:pointer;";
             closeBtn.onclick = function() {
                 document.body.removeChild(overlay);
             };
@@ -148,17 +171,23 @@
             overlay.appendChild(closeBtn);
             document.body.appendChild(overlay);
 
-            // 自動幫忙選取文字
+            // 自動聚焦並選取
+            textArea.focus();
             textArea.select();
-            textArea.setSelectionRange(0, 99999); // 針對手機版
+            textArea.setSelectionRange(0, 9999); // 針對 iOS 的相容性
 
-            // 嘗試執行最後一次自動複製
+            // 最後嘗試一次指令複製
             try {
                 document.execCommand('copy');
                 alert("✅ 已自動選取文字，請點擊「複製」或手動拷貝。");
             } catch (err) {
-                // 如果連 execCommand 都掛了，至少對方現在看得到文字可以選了
+                // 即使自動複製失敗，現在對方也看得到文字框可以手動選取了
             }
+        }
+
+        // 針對 Google Drive 下載的導向 (保持原本邏輯)
+        function handleSave() {
+            window.location.href = "https://drive.google.com/uc?export=download&id=1UYH1B2v1RZLsnULqS4G3pAL8idYtSelc";
         }
     </script>
 </body>
