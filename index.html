@@ -102,26 +102,62 @@
 
     <script>
         function copyContactText() {
+            // 1. 取得 Base64 解碼後的文字
             const encoded = document.getElementById('js-encoded-data').textContent.trim();
-            // 處理中文 Base64 解碼
             const text = decodeURIComponent(atob(encoded).split('').map(function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
             }).join(''));
 
+            // 2. 嘗試使用現代 Clipboard API
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => alert("✅ 聯絡資訊已複製！"));
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        alert("✅ 聯絡資訊已複製！");
+                    })
+                    .catch(() => {
+                        fallbackCopy(text);
+                    }); // 失敗則進入備用方案
             } else {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    alert("✅ 聯絡資訊已複製！");
-                } catch (err) {
-                    alert("複製失敗，請手動選取");
-                }
-                document.body.removeChild(textArea);
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            // 解決妳說的「畫面上只有圖片無法選取」的問題
+            // 我們動態建立一個漂亮的滿版 overlay，把文字噴出來讓對方選
+            const overlay = document.createElement("div");
+            overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; box-sizing:border-box;";
+
+            const info = document.createElement("p");
+            info.textContent = "請長按下方文字框全選並複製：";
+            info.style = "margin-bottom:15px; font-size:16px;";
+
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style = "width:100%; height:200px; padding:15px; border-radius:10px; font-size:16px; border:none;";
+
+            const closeBtn = document.createElement("button");
+            closeBtn.textContent = "關閉視窗";
+            closeBtn.style = "margin-top:20px; padding:10px 30px; border-radius:20px; border:none; background:#6c2d91; color:white; font-size:16px;";
+            closeBtn.onclick = function() {
+                document.body.removeChild(overlay);
+            };
+
+            overlay.appendChild(info);
+            overlay.appendChild(textArea);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+
+            // 自動幫忙選取文字
+            textArea.select();
+            textArea.setSelectionRange(0, 99999); // 針對手機版
+
+            // 嘗試執行最後一次自動複製
+            try {
+                document.execCommand('copy');
+                alert("✅ 已自動選取文字，請點擊「複製」或手動拷貝。");
+            } catch (err) {
+                // 如果連 execCommand 都掛了，至少對方現在看得到文字可以選了
             }
         }
     </script>
